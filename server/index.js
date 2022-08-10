@@ -4,6 +4,13 @@ const axios = require("axios");
 const i18n = require("./i18n/translation");
 const apikey = process.env.cryptocompare;
 
+const API_TOKEN = process.env.botToken || '';
+const PORT = process.env.PORT || 3000;
+const URL = process.env.URL || 'https://ctyptoapp.herokuapp.com';
+
+bot.telegram.setWebhook(`${URL}/bot${API_TOKEN}`);
+bot.startWebhook(`/bot${API_TOKEN}`, null, PORT)
+
 bot.use(Telegraf.log());
 bot.command("start", (ctx) => {
     sendStartMessage(ctx);
