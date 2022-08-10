@@ -1,0 +1,16 @@
+{
+    "name": "currency_bot",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "server:install": "cd server && npm ci",
+        "install": "npm run server:install",
+        "start": "cd server && npm run start",
+        "server": "cd server && npm run dev",
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "rebuild": "set NODE_OPTIONS=--max_old_space_size=4096 && npm run build && npm run server "
+    },
+    "author": "",
+    "license": "ISC"
+}
