@@ -169,8 +169,6 @@ bot.action("dev", (ctx) => {
 //     });
 // });
 
-bot.launch().then(() => console.log("Bot is running!"));
-
 const port = process.env.PORT || 3000;
 expressApp.get("/", (req, res) => {
     res.send("Hello World!");
@@ -179,3 +177,5 @@ expressApp.get("/", (req, res) => {
 expressApp.listen(port, () => {
     console.log(`Listening on port ${port}`);
 });
+
+bot.launch().then(() => console.log("Bot is running!"));
