@@ -6,6 +6,17 @@ const i18n = require("./i18n/translation");
 const apikey = process.env.cryptocompare;
 const expressApp = express();
 
+const port = process.env.PORT || 3000;
+expressApp.get("/", (req, res) => {
+    res.send("Hello World!");
+});
+
+expressApp.listen(port, () => {
+    console.log(`Listening on port ${port}`);
+});
+
+
+
 bot.use(Telegraf.log());
 bot.command("start", (ctx) => {
     sendStartMessage(ctx);
@@ -169,13 +180,5 @@ bot.action("dev", (ctx) => {
 //     });
 // });
 
-const port = process.env.PORT || 3000;
-expressApp.get("/", (req, res) => {
-    res.send("Hello World!");
-});
-
-expressApp.listen(port, () => {
-    console.log(`Listening on port ${port}`);
-});
 
 bot.launch().then(() => console.log("Bot is running!"));
