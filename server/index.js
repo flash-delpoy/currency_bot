@@ -1,15 +1,10 @@
 const { Telegraf, session, Markup } = require("telegraf");
 const bot = new Telegraf(process.env.botToken);
 const axios = require("axios");
+const express = require("express");
 const i18n = require("./i18n/translation");
 const apikey = process.env.cryptocompare;
-
-const API_TOKEN = process.env.botToken || '';
-const PORT = process.env.PORT || 3000;
-const URL = process.env.URL || 'https://ctyptoapp.herokuapp.com';
-
-bot.telegram.setWebhook(`${URL}/bot${API_TOKEN}`);
-bot.startWebhook(`/bot${API_TOKEN}`, null, PORT)
+const expressApp = express();
 
 bot.use(Telegraf.log());
 bot.command("start", (ctx) => {
@@ -175,3 +170,12 @@ bot.action("dev", (ctx) => {
 // });
 
 bot.launch().then(() => console.log("Bot is running!"));
+
+const port = process.env.PORT || 3000;
+expressApp.get("/", (req, res) => {
+    res.send("Hello World!");
+});
+
+expressApp.listen(port, () => {
+    console.log(`Listening on port ${port}`);
+});
