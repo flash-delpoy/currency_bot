@@ -1,1 +1,1 @@
-worker: node env-cmd dist/app.js
+worker: node dist/app.js
