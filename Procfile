@@ -1,0 +1,1 @@
+worker: node env-cmd dist/app.js

@@ -12,5 +12,9 @@
         "rebuild": "set NODE_OPTIONS=--max_old_space_size=4096 && npm run build && npm run server "
     },
     "author": "",
-    "license": "ISC"
+    "license": "ISC",
+    "engines": {
+        "node": "17.0",
+        "npm": "8.1"
+    }
 }
