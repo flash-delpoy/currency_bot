@@ -1,21 +1,11 @@
-const { Telegraf, session, Markup } = require("telegraf");
+const { Telegraf, Markup } = require("telegraf");
 const bot = new Telegraf(process.env.botToken);
 const axios = require("axios");
-const express = require("express");
 const i18n = require("./i18n/translation");
 const apikey = process.env.cryptocompare;
 const cc = require("currency-codes");
 const moment = require("moment");
-const expressApp = express();
-
-const port = process.env.PORT || 3000;
-expressApp.get("/", (req, res) => {
-    res.redirect("https://t.me/blackflash_bot");
-});
-
-expressApp.listen(port, () => {
-    console.log(`Listening on port ${port}`);
-});
+const constant = require("./constant/index");
 
 // bot.use(Telegraf.log());
 bot.command("start", (ctx) => {
@@ -40,6 +30,10 @@ function sendStartMessage(ctx) {
                     text: i18n[ctx.from.language_code].cryptoPrice,
                     callback_data: "crypto_price",
                 }, ],
+                [{
+                    text: i18n[ctx.from.language_code].metals,
+                    callback_data: "metals",
+                }, ],
                 [{ text: i18n[ctx.from.language_code].botInfo, callback_data: "info" }],
             ],
         },
@@ -63,15 +57,9 @@ bot.action("nat_price", (ctx) => {
                         },
                     ],
                     [{
-                            text: i18n[ctx.from.language_code].alfabank,
-                            callback_data: "alfa",
-                        },
-                        { text: i18n[ctx.from.language_code].nbu, callback_data: "nbu" },
-                    ],
-                    // [
-                    //     { text: "XRP", callback_data: "price-XRP" },
-                    //     { text: "DOT", callback_data: "price-DOT" },
-                    // ],
+                        text: i18n[ctx.from.language_code].nbu,
+                        callback_data: "nbu-currencies",
+                    }, ],
                     [{
                         text: i18n[ctx.from.language_code].backToCurrency,
                         callback_data: "start",
@@ -98,10 +86,6 @@ bot.action("mono", (ctx) => {
                             callback_data: "mono-EUR",
                         },
                     ],
-                    // [
-                    //     { text: "XRP", callback_data: "price-XRP" },
-                    //     { text: "DOT", callback_data: "price-DOT" },
-                    // ],
                     [{
                         text: i18n[ctx.from.language_code].backToCurrency,
                         callback_data: "nat_price",
@@ -112,9 +96,7 @@ bot.action("mono", (ctx) => {
     );
 });
 
-let monoList = ["mono-USD", "mono-EUR", "mono-PLN", "mono-GBP"];
-
-bot.action(monoList, async(ctx) => {
+bot.action(constant.monoList, async(ctx) => {
     let curr = ctx.match.input.split("-")[1];
 
     try {
@@ -203,44 +185,37 @@ bot.action("privat", (ctx) => {
     );
 });
 
-const privat = ["privat-online", "privat-offline"];
-
-bot.action(privat, (ctx) => {
+bot.action(constant.privat, (ctx) => {
     let isOffline = ctx.match.input.split("-")[1];
 
     ctx.deleteMessage();
 
-    bot.telegram.sendMessage(
-        ctx.chat.id,
-        i18n[ctx.from.language_code].natCurrency, {
-            reply_markup: {
-                inline_keyboard: [
-                    [{
-                            text: i18n[ctx.from.language_code].usd,
-                            callback_data: `${isOffline}-USD`,
-                        },
-                        {
-                            text: i18n[ctx.from.language_code].eur,
-                            callback_data: `${isOffline}-EUR`,
-                        },
-                    ],
-                    [{
-                        text: i18n[ctx.from.language_code].back,
-                        callback_data: "privat",
-                    }, ],
-                    [{
-                        text: i18n[ctx.from.language_code].backToCurrency,
-                        callback_data: "start",
-                    }, ],
+    bot.telegram.sendMessage(ctx.chat.id, i18n[ctx.from.language_code].choose, {
+        reply_markup: {
+            inline_keyboard: [
+                [{
+                        text: i18n[ctx.from.language_code].usd,
+                        callback_data: `${isOffline}-USD`,
+                    },
+                    {
+                        text: i18n[ctx.from.language_code].eur,
+                        callback_data: `${isOffline}-EUR`,
+                    },
                 ],
-            },
-        }
-    );
+                [{
+                    text: i18n[ctx.from.language_code].back,
+                    callback_data: "privat",
+                }, ],
+                [{
+                    text: i18n[ctx.from.language_code].backToCurrency,
+                    callback_data: "start",
+                }, ],
+            ],
+        },
+    });
 });
 
-const privatCurr = ["offline-USD", "offline-EUR", "online-USD", "online-EUR"];
-
-bot.action(privatCurr, async(ctx) => {
+bot.action(constant.privatCurr, async(ctx) => {
     let isOffline = ctx.match.input.split("-")[0];
     let curr = ctx.match.input.split("-")[1];
 
@@ -258,9 +233,8 @@ bot.action(privatCurr, async(ctx) => {
                 const foundCurrency = res.data.find((cur) => {
                     return cur.ccy.toString() === curr;
                 });
-                foundCurrency.buy = +foundCurrency.buy
-                foundCurrency.sale = +foundCurrency.sale
-
+                foundCurrency.buy = +foundCurrency.buy;
+                foundCurrency.sale = +foundCurrency.sale;
 
                 moment.locale(i18n[ctx.from.language_code].timeLocale);
 
@@ -296,8 +270,154 @@ ${i18n[ctx.from.language_code].sell} ${foundCurrency.sale.toFixed(2)}${
                 });
             })
             .catch((e) => {
-                //return ctx.reply(i18n[ctx.from.language_code].manyRequest);
-                return ctx.reply(e.message);
+                return ctx.reply(i18n[ctx.from.language_code].manyRequest);
+            });
+    } catch (err) {
+        console.log(err);
+        ctx.reply("Error Encountered");
+    }
+});
+
+bot.action("nbu-currencies", (ctx) => {
+    ctx.deleteMessage();
+    bot.telegram.sendMessage(
+        ctx.chat.id,
+        i18n[ctx.from.language_code].natCurrency, {
+            reply_markup: {
+                inline_keyboard: [
+                    [{
+                            text: i18n[ctx.from.language_code].usd,
+                            callback_data: "nbu-USD",
+                        },
+                        {
+                            text: i18n[ctx.from.language_code].eur,
+                            callback_data: "nbu-EUR",
+                        },
+                        {
+                            text: i18n[ctx.from.language_code].pln,
+                            callback_data: "nbu-PLN",
+                        },
+                    ],
+                    [{
+                            text: i18n[ctx.from.language_code].czk,
+                            callback_data: "nbu-CZK",
+                        },
+                        {
+                            text: i18n[ctx.from.language_code].dkk,
+                            callback_data: "nbu-DKK",
+                        },
+                        {
+                            text: i18n[ctx.from.language_code].nok,
+                            callback_data: "nbu-NOK",
+                        },
+                    ],
+                    [{
+                            text: i18n[ctx.from.language_code].cad,
+                            callback_data: "nbu-CAD",
+                        },
+                        {
+                            text: i18n[ctx.from.language_code].gbp,
+                            callback_data: "nbu-GBP",
+                        },
+                        {
+                            text: i18n[ctx.from.language_code].cny,
+                            callback_data: "nbu-CNY",
+                        },
+                    ],
+                    [{
+                        text: i18n[ctx.from.language_code].back,
+                        callback_data: "nat_price",
+                    }, ],
+                    [{
+                        text: i18n[ctx.from.language_code].backToCurrency,
+                        callback_data: "start",
+                    }, ],
+                ],
+            },
+        }
+    );
+});
+
+bot.action("metals", (ctx) => {
+    ctx.deleteMessage();
+    bot.telegram.sendMessage(
+        ctx.chat.id,
+        i18n[ctx.from.language_code].selectMetals, {
+            reply_markup: {
+                inline_keyboard: [
+                    [{
+                            text: i18n[ctx.from.language_code].xau,
+                            callback_data: "metal-XAU",
+                        },
+                        {
+                            text: i18n[ctx.from.language_code].xag,
+                            callback_data: "metal-XAG",
+                        },
+                    ],
+                    [{
+                            text: i18n[ctx.from.language_code].xpt,
+                            callback_data: "metal-XPT",
+                        },
+                        {
+                            text: i18n[ctx.from.language_code].xpd,
+                            callback_data: "metal-XPD",
+                        },
+                    ],
+
+                    [{
+                        text: i18n[ctx.from.language_code].back,
+                        callback_data: "start",
+                    }, ],
+                ],
+            },
+        }
+    );
+});
+
+bot.action(constant.nbuCurr, async(ctx) => {
+    let isMetal = ctx.match.input.split("-")[0] === "metal";
+    let curr = ctx.match.input.split("-")[1];
+
+    try {
+        await axios
+            .get("https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json")
+            .then((res) => {
+                const foundCurrency = res.data.find((cur) => {
+                    return cur.cc.toString() === curr;
+                });
+
+                moment.locale(i18n[ctx.from.language_code].timeLocale);
+
+                let message = `
+${i18n[ctx.from.language_code].currency} <strong>${curr}</strong>
+${i18n[ctx.from.language_code].date} <i>${moment(new Date()).format("LL")}</i>
+${i18n[ctx.from.language_code].rate} <strong>${foundCurrency.rate.toFixed(2)}${
+          i18n[ctx.from.language_code].shortUAH
+        }</strong>
+`;
+
+                ctx.deleteMessage();
+                ctx.reply(message, {
+                    disable_web_page_preview: true,
+                    parse_mode: "HTML",
+                    ...Markup.inlineKeyboard([
+                        [
+                            Markup.button.callback(
+                                i18n[ctx.from.language_code].back,
+                                isMetal ? "metals" : "nbu-currencies"
+                            ),
+                        ],
+                        [
+                            Markup.button.callback(
+                                i18n[ctx.from.language_code].backToCurrency,
+                                "start"
+                            ),
+                        ],
+                    ]),
+                });
+            })
+            .catch((e) => {
+                return ctx.reply(i18n[ctx.from.language_code].manyRequest);
             });
     } catch (err) {
         console.log(err);
@@ -312,7 +432,6 @@ bot.action("crypto_price", (ctx) => {
         i18n[ctx.from.language_code].cryptoCurrency, {
             reply_markup: {
                 inline_keyboard: [
-                    //     ["BCH", "BNB", "BTC", "DOGE", "DOT", "ETH", "LTC", "SOL", "XRP"]
                     [
                         { text: "BCH", callback_data: "price-BCH" },
                         { text: "BNB ", callback_data: "price-BNB" },
@@ -341,19 +460,7 @@ bot.action("crypto_price", (ctx) => {
     );
 });
 
-let cryptoList = [
-    "price-BTC",
-    "price-ETH",
-    "price-BCH",
-    "price-LTC",
-    "price-SOL",
-    "price-XRP",
-    "price-DOT",
-    "price-DOGE",
-    "price-BNB",
-];
-
-bot.action(cryptoList, async(ctx) => {
+bot.action(constant.cryptoList, async(ctx) => {
     let symbol = ctx.match.input.split("-")[1];
 
     try {
@@ -405,10 +512,7 @@ bot.action("info", (ctx) => {
     ctx.reply(i18n[ctx.from.language_code].aboutBot, {
         parse_mode: "HTML",
         ...Markup.inlineKeyboard([
-            [
-                Markup.button.callback(i18n[ctx.from.language_code].developer, "dev"),
-                // Markup.button.callback(i18n[ctx.from.language_code].donate, "donate"),
-            ],
+            [Markup.button.callback(i18n[ctx.from.language_code].developer, "dev")],
             [
                 Markup.button.callback(
                     i18n[ctx.from.language_code].backToCurrency,
@@ -433,20 +537,5 @@ bot.action("dev", (ctx) => {
         ]),
     });
 });
-
-// bot.action("donate", (ctx) => {
-//     ctx.deleteMessage();
-//     ctx.reply(, {
-//         parse_mode: "HTML",
-//         ...Markup.inlineKeyboard([
-//             [
-//                 Markup.button.callback(
-//                     i18n[ctx.from.language_code].backToCurrency,
-//                     "start"
-//                 ),
-//             ],
-//         ]),
-//     });
-// });
 
 bot.launch().then(() => console.log("Bot is running!"));
